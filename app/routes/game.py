@@ -191,7 +191,7 @@ async def quest_summary(request: Request, campaign_id: str):
             yield "data: [DONE]\n\n"
         except Exception as e:
             logger.error(f"Recap error: {e}")
-            yield f"data: [ERROR] {e}\n\n"
+            yield "data: [ERROR] Something went wrong. Please try again.\n\n"
 
     return StreamingResponse(generate(), media_type="text/event-stream")
 
@@ -250,7 +250,7 @@ async def last_session_recap(request: Request, campaign_id: str):
             yield "data: [DONE]\n\n"
         except Exception as e:
             logger.error(f"Recap error: {e}")
-            yield f"data: [ERROR] {e}\n\n"
+            yield "data: [ERROR] Something went wrong. Please try again.\n\n"
 
     return StreamingResponse(generate(), media_type="text/event-stream")
 
@@ -415,7 +415,7 @@ async def game_stream(request: Request, campaign_id: str):
                     yield f"event: image\ndata: {img_url}\n\n"
         except Exception as e:
             logger.error(f"Stream error: {e}")
-            yield f"data: [ERROR] {e}\n\n"
+            yield "data: [ERROR] Something went wrong. Please try again.\n\n"
         finally:
             # If client disconnected before we persisted, save now
             if full_response.strip() and not persisted:
