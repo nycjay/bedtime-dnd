@@ -436,3 +436,100 @@ class TestCampaignSharingFlow:
             assert len(notifications) == 1
             assert notifications[0]["type"] == "level_up"
             assert "Level 2" in notifications[0]["item"]
+
+
+class TestExpiredToken:
+    """Expired or invalid tokens should redirect to login, not crash."""
+
+    def test_expired_token_redirects(self, client):
+        """A request with an invalid/expired cookie should redirect to login."""
+        client.cookies.set("access_token", "expired.jwt.token")
+        resp = client.get("/campaigns", follow_redirects=False)
+        assert resp.status_code in (302, 303, 307)
+        assert "/login" in resp.headers.get("location", "")
+        client.cookies.clear()
+
+    def test_garbage_token_redirects(self, client):
+        """A request with garbage in the cookie should redirect, not 500."""
+        client.cookies.set("access_token", "not-a-jwt")
+        resp = client.get("/players", follow_redirects=False)
+        assert resp.status_code in (302, 303, 307)
+        assert "/login" in resp.headers.get("location", "")
+        client.cookies.clear()
+
+
+class TestOwnershipChecks:
+    """Non-owners should not be able to delete or reorder campaigns."""
+
+    def test_delete_campaign_blocked_for_non_owner(self):
+        from unittest.mock import MagicMock, patch
+
+        with patch.dict(
+            "os.environ",
+            {
+                "SUPABASE_URL": "https://test.supabase.co",
+                "SUPABASE_KEY": "test-key",
+                "SUPABASE_SERVICE_KEY": "test-service-key",
+                "GEMINI_API_KEY": "test-gemini-key",
+            },
+        ):
+            with patch("app.deps.create_client"), patch("app.deps.genai"):
+                from app.deps import require_auth
+                from main import app
+
+                mock_user = MagicMock()
+                mock_user.id = "user-attacker"
+                mock_client = MagicMock()
+                mock_campaign = MagicMock()
+                mock_campaign.data = {"profile_id": "user-owner"}
+                mock_client.table.return_value.select.return_value.eq.return_value.single.return_value = mock_campaign
+
+                app.dependency_overrides[require_auth] = lambda: (mock_client, mock_user)
+                try:
+                    client = TestClient(app, raise_server_exceptions=False)
+                    with patch("app.routes.campaigns.require_one", return_value=mock_campaign):
+                        resp = client.post("/campaigns/some-id/delete", follow_redirects=False)
+                        assert resp.status_code == 303
+                        assert "/campaigns/some-id" in resp.headers.get("location", "")
+                        mock_client.table.return_value.delete.assert_not_called()
+                finally:
+                    app.dependency_overrides.clear()
+
+    def test_reorder_blocked_for_non_owner(self):
+        from unittest.mock import MagicMock, patch
+
+        with patch.dict(
+            "os.environ",
+            {
+                "SUPABASE_URL": "https://test.supabase.co",
+                "SUPABASE_KEY": "test-key",
+                "SUPABASE_SERVICE_KEY": "test-service-key",
+                "GEMINI_API_KEY": "test-gemini-key",
+            },
+        ):
+            with patch("app.deps.create_client"), patch("app.deps.genai"):
+                from app.deps import require_auth
+                from main import app
+
+                mock_user = MagicMock()
+                mock_user.id = "user-attacker"
+                mock_client = MagicMock()
+                mock_campaign = MagicMock()
+                mock_campaign.data = {"profile_id": "user-owner"}
+                mock_client.table.return_value.select.return_value.eq.return_value.single.return_value = mock_campaign
+
+                app.dependency_overrides[require_auth] = lambda: (mock_client, mock_user)
+                try:
+                    client = TestClient(app, raise_server_exceptions=False)
+                    with patch("app.routes.campaigns.require_one", return_value=mock_campaign):
+                        with patch("app.routes.campaigns.supabase_admin") as mock_admin:
+                            resp = client.post(
+                                "/campaigns/some-id/reorder",
+                                data={"order": ["p1", "p2"]},
+                                follow_redirects=False,
+                            )
+                            assert resp.status_code == 303
+                            assert "/campaigns/some-id" in resp.headers.get("location", "")
+                            mock_admin.table.return_value.upsert.assert_not_called()
+                finally:
+                    app.dependency_overrides.clear()

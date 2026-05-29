@@ -37,6 +37,4 @@ Make the app AI-model agnostic for open-source flexibility.
 
 ## Tests
 
-- Test ownership checks (edit/delete/reorder blocked for non-owners)
-- Test require_auth dependency (redirect on expired token)
 - Test party join/leave narrative log insertion
