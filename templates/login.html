@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ app_name }}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap" rel="stylesheet">
+  <link rel="icon" href="/static/favicon.png">
+  <link rel="stylesheet" href="/static/theme.css">
+  <style>
+    .splash-img { border-radius: 0.75rem; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center" data-theme="dark">
+  <script>
+    (function() {
+      let t = localStorage.getItem('theme') || 'dark';
+      if (t === 'system') t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      document.body.setAttribute('data-theme', t);
+    })();
+  </script>
+
+  <div class="w-full max-w-sm mx-auto px-6 space-y-6">
+    <!-- Splash image -->
+    <img src="/static/splash.png" alt="An ancient storybook glowing with magic" class="splash-img w-full rounded-xl">
+
+    <!-- Title -->
+    <h1 class="text-4xl text-center" style="color: var(--accent)">{{ app_name }}</h1>
+    <p class="text-center text-sm muted" style="color: var(--text); opacity: 0.6">Adventure awaits...</p>
+
+    <!-- Flash messages -->
+    <script>
+      (function() {
+        const p = new URLSearchParams(window.location.search);
+        if (p.get('reset_sent')) {
+          document.write('<div data-flash class="p-3 rounded text-sm text-center" style="background: color-mix(in srgb, var(--accent) 20%, transparent); color: var(--text);">Check your email for a reset link.</div>');
+        }
+        if (p.get('reset_done')) {
+          document.write('<div data-flash class="p-3 rounded text-sm text-center" style="background: color-mix(in srgb, var(--accent) 20%, transparent); color: var(--text);">Password updated! Log in with your new password.</div>');
+        }
+        if (p.get('confirm_sent')) {
+          document.write('<div data-flash class="p-3 rounded text-sm text-center" style="background: color-mix(in srgb, var(--accent) 20%, transparent); color: var(--text);">Check your email to confirm your account, then log in.</div>');
+        }
+      })();
+    </script>
+
+    <!-- Auth form -->
+    <form id="authForm" method="post" action="/login" class="space-y-3">
+      <input name="email" type="email" placeholder="Email" required class="w-full p-3 rounded" style="background: var(--input); color: var(--text); border: 1px solid rgba(255,255,255,0.1)">
+      <input name="password" type="password" placeholder="Password" required class="w-full p-3 rounded" style="background: var(--input); color: var(--text); border: 1px solid rgba(255,255,255,0.1)">
+      <button type="submit" id="submitBtn" class="w-full p-3 rounded font-bold text-white" style="background: var(--accent)">Enter the Realm</button>
+    </form>
+
+    <!-- Forgot password (hidden in signup mode, only shown if email enabled) -->
+    {% if email_enabled %}
+    <div id="forgotSection" class="text-center text-sm" style="color: var(--text); opacity: 0.5">
+        <a href="#" id="forgotLink" class="hover:underline" style="color: var(--accent)">Forgot password?</a>
+    </div>
+    {% endif %}
+
+    <p class="text-center text-sm" style="color: var(--text); opacity: 0.5">
+      <a href="#" id="toggleAuth" class="hover:underline" style="color: var(--accent)">Need an account? Sign up</a>
+    </p>
+  </div>
+
+  <script>
+    const form = document.getElementById('authForm');
+    const btn = document.getElementById('submitBtn');
+    const toggle = document.getElementById('toggleAuth');
+    const forgotSection = document.getElementById('forgotSection');
+    const forgotLink = document.getElementById('forgotLink');
+    let isLogin = true;
+
+    toggle.addEventListener('click', (e) => {
+      e.preventDefault();
+      isLogin = !isLogin;
+      form.action = isLogin ? '/login' : '/signup';
+      btn.textContent = isLogin ? 'Enter the Realm' : 'Begin Your Quest';
+      toggle.textContent = isLogin ? 'Need an account? Sign up' : 'Already have an account? Login';
+      if (forgotSection) forgotSection.style.display = isLogin ? '' : 'none';
+    });
+
+    // Forgot password: replace link with inline form, hide login form
+    if (forgotLink) {
+      forgotLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        form.classList.add('hidden');
+        toggle.parentElement.classList.add('hidden');
+        forgotSection.innerHTML = `
+          <form method="post" action="/forgot-password" class="space-y-2">
+            <input name="email" type="email" placeholder="Enter your email" required
+                   class="w-full p-3 rounded" style="background: var(--input); color: var(--text); border: 1px solid rgba(255,255,255,0.1)">
+            <button type="submit" class="w-full p-2 rounded text-sm font-bold text-white" style="background: var(--accent)">
+              Send Reset Link
+            </button>
+          </form>
+          <p class="text-center text-sm mt-3"><a href="/login" class="hover:underline" style="color: var(--accent)">← Back to login</a></p>`;
+      });
+    }
+
+    // Auto-dismiss flash messages
+    document.querySelectorAll('[data-flash]').forEach(el => {
+      setTimeout(() => { el.style.transition = 'opacity 0.5s'; el.style.opacity = '0'; setTimeout(() => el.remove(), 500); }, 3000);
+    });
+  </script>
+</body>
+</html>

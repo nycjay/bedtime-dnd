@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% set nav = "campaigns" %}
+{% block title %}{{ campaign.name }} History - {{ app_name }}{% endblock %}
+{% block content %}
+<div class="space-y-6">
+  <a href="/campaigns/{{ campaign.id }}" class="text-sm muted">← Back to Campaign</a>
+  <div class="flex items-center justify-between">
+    <h1 class="text-2xl font-bold">📖 {{ campaign.name }}</h1>
+    {% if sessions %}
+    <button onclick="window.print()" class="text-xs px-3 py-1 rounded input">📄 Save as PDF</button>
+    {% endif %}
+  </div>
+
+  {% if sessions %}
+  <div class="space-y-3" id="sessions">
+    {% for s in sessions|reverse %}
+    {% set idx = sessions|length - loop.index0 %}
+    <div class="card p-4 rounded-lg cursor-pointer" onclick="toggleSession({{ loop.index0 }})">
+      <div class="flex justify-between items-center">
+        <span class="font-bold text-sm" style="color: var(--accent)">Session {{ idx }}</span>
+        <span class="text-xs muted">{{ s.date.strftime('%b %d, %Y') }} · 🎲 {{ s.turns }} turn{{ 's' if s.turns != 1 else '' }}</span>
+      </div>
+      <p class="text-sm mt-2 muted session-preview" id="preview-{{ loop.index0 }}">{{ s.preview }}</p>
+      <div class="hidden mt-3 space-y-3 text-sm session-full" id="full-{{ loop.index0 }}">
+        {% for msg in s.story %}
+        <p>{{ msg.content }}</p>
+        {% if msg.image_url %}
+        <img src="{{ msg.image_url }}" class="rounded-lg w-full my-2" loading="lazy">
+        {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="muted text-sm">No adventures yet. Start playing to build your story!</p>
+  {% endif %}
+</div>
+
+<style>
+  @media print {
+    nav, .muted a, button, [data-flash] { display: none !important; }
+    .card { border: none !important; box-shadow: none !important; break-inside: avoid; }
+    .session-preview { display: none !important; }
+    .session-full { display: block !important; }
+    body { background: white !important; color: black !important; }
+    h1 { color: black !important; }
+  }
+</style>
+<script>
+  function toggleSession(idx) {
+    const preview = document.getElementById('preview-' + idx);
+    const full = document.getElementById('full-' + idx);
+    preview.classList.toggle('hidden');
+    full.classList.toggle('hidden');
+  }
+</script>
+{% endblock %}

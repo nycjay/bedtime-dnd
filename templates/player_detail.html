@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% set nav = "players" %}
+{% block title %}{{ player.name }} - {{ app_name }}{% endblock %}
+{% block content %}
+<div class="space-y-6">
+  <a href="/players" class="text-sm text-gray-400 hover:text-white">← Back</a>
+  <h1 class="text-2xl font-bold">🧙 {{ player.name }}</h1>
+
+  {% if player.avatar_url %}
+  <div class="flex justify-center">
+    <div class="w-40 h-40 overflow-hidden shadow-lg" style="border-radius: 1rem;">
+      <img src="{{ player.avatar_url }}" alt="{{ player.name }}" class="w-full h-full object-cover scale-[1.18]">
+    </div>
+  </div>
+  {% endif %}
+
+  {% if player.unspent_points and player.unspent_points > 0 %}
+  <div class="card p-4 rounded-lg space-y-3" style="border-color: var(--accent)">
+    <div class="font-bold text-sm" style="color: var(--accent)">⬆️ Level Up! You have {{ player.unspent_points }} point(s) to spend!</div>
+    <form method="post" action="/players/{{ player.id }}/level-up" class="flex gap-2">
+      <select name="stat" class="flex-1 p-3 rounded input text-sm">
+        <option value="might">Might ({{ player.might }})</option>
+        <option value="agility">Agility ({{ player.agility }})</option>
+        <option value="wits">Wits ({{ player.wits }})</option>
+      </select>
+      <button type="submit" class="btn-primary px-4 rounded font-bold text-sm">+1</button>
+    </form>
+  </div>
+  <script>
+    if (localStorage.getItem('kq-sound') !== 'off') new Audio('/static/audio/level-up.mp3').play();
+  </script>
+  {% endif %}
+
+  <div class="text-center muted text-xs">Level {{ player.level or 1 }}</div>
+
+  {% if request.query_params.get('saved') %}
+  <div data-flash class="bg-green-900 text-green-300 p-3 rounded text-sm">✓ Saved</div>
+  {% endif %}
+
+  <form method="post" action="/players/{{ player.id }}/edit" enctype="multipart/form-data" class="card p-4 rounded-lg space-y-4">
+    <div>
+      <label class="block text-sm text-gray-400 mb-1">Photo <span class="text-gray-500">(upload new to regenerate avatar)</span></label>
+      <div class="space-y-2">
+        <div id="camera-container" class="hidden">
+          <video id="camera-preview" autoplay playsinline class="w-full rounded input"></video>
+          <canvas id="camera-canvas" class="hidden"></canvas>
+          <button type="button" id="snap-btn" class="w-full mt-2 bg-green-600 hover:bg-green-500 p-2 rounded text-sm font-bold">📸 Take Photo</button>
+        </div>
+        <img id="photo-preview" class="hidden w-32 h-32 rounded object-cover mx-auto">
+        <input name="photo" id="photo-input" type="file" accept="image/*" class="w-full p-2 rounded input text-sm file:mr-2 file:rounded file:border-0 file:bg-indigo-600 file:px-3 file:py-1 file:text-white file:text-sm">
+        <button type="button" id="camera-btn" class="w-full input hover:bg-gray-600 p-2 rounded text-sm">📷 Use Camera</button>
+      </div>
+    </div>
+    <div>
+      <label class="block text-sm text-gray-400 mb-1">Name</label>
+      <input name="name" value="{{ player.name }}" required class="w-full p-3 rounded input">
+    </div>
+    <div>
+      <label class="block text-sm text-gray-400 mb-1">Class</label>
+      <select name="class" class="w-full p-3 rounded input">
+        {% for cls in ['Warrior', 'Wizard', 'Rogue', 'Healer', 'Ranger', 'Elf Knight', 'Dwarf Smith', 'Druid', 'Bard', 'Paladin', 'Dragon', 'Dragonborn', 'Fairy', 'Beastmaster', 'Pirate', 'Clockwork Knight'] %}
+        <option value="{{ cls }}" {% if player.class == cls %}selected{% endif %}>{{ cls }}</option>
+        {% endfor %}
+        {% if player.class not in ['Warrior', 'Wizard', 'Rogue', 'Healer', 'Ranger', 'Elf Knight', 'Dwarf Smith', 'Druid', 'Bard', 'Paladin'] %}
+        <option value="{{ player.class }}" selected>{{ player.class }}</option>
+        {% endif %}
+      </select>
+    </div>
+    <div>
+      <label class="block text-sm text-gray-400 mb-1">Description</label>
+      <textarea name="description" rows="3" placeholder="Backstory, looks, personality..." class="w-full p-3 rounded input text-sm">{{ player.description or '' }}</textarea>
+    </div>
+    <div>
+      <label class="block text-sm text-gray-400 mb-1">Stats</label>
+      <div class="grid grid-cols-3 gap-2">
+        <div>
+          <label class="block text-xs text-gray-500 text-center">Might</label>
+          <input name="might" type="number" min="1" max="5" value="{{ player.might }}" class="w-full p-3 rounded input text-center">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 text-center">Agility</label>
+          <input name="agility" type="number" min="1" max="5" value="{{ player.agility }}" class="w-full p-3 rounded input text-center">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 text-center">Wits</label>
+          <input name="wits" type="number" min="1" max="5" value="{{ player.wits }}" class="w-full p-3 rounded input text-center">
+        </div>
+      </div>
+    </div>
+    <p class="text-xs muted">Max HP: {{ player.max_hp }} (8 + Might)</p>
+    <button type="submit" class="w-full btn-primary p-3 rounded font-bold">Save</button>
+  </form>
+
+  {% if memberships %}
+  <p class="text-yellow-400 text-sm mb-2">⚠️ {{ player.name }} is in {{ memberships|length }} campaign(s)</p>
+  {% endif %}
+  <form method="post" action="/players/{{ player.id }}/delete" id="delete-form">
+    <button type="submit" class="w-full btn-danger p-3 rounded font-bold text-red-300">Delete Character</button>
+  </form>
+  <script>
+    document.getElementById('delete-form').addEventListener('submit', function(e) {
+      const msg = 'Delete {{ player.name }}? '
+        + '{% if memberships %}They will be removed from {{ memberships|length }} campaign(s). {% endif %}'
+        + 'This cannot be undone.';
+      if (!confirm(msg)) e.preventDefault();
+    });
+  </script>
+</div>
+<script>
+  const cameraBtn = document.getElementById('camera-btn');
+  const cameraContainer = document.getElementById('camera-container');
+  const video = document.getElementById('camera-preview');
+  const canvas = document.getElementById('camera-canvas');
+  const snapBtn = document.getElementById('snap-btn');
+  const photoInput = document.getElementById('photo-input');
+  const photoPreview = document.getElementById('photo-preview');
+  let stream = null;
+
+  cameraBtn.addEventListener('click', async () => {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+      video.srcObject = stream;
+      cameraContainer.classList.remove('hidden');
+      cameraBtn.classList.add('hidden');
+      photoInput.classList.add('hidden');
+    } catch (e) {
+      alert('Camera access denied');
+    }
+  });
+
+  snapBtn.addEventListener('click', () => {
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    canvas.toBlob(blob => {
+      const file = new File([blob], 'camera-photo.jpg', { type: 'image/jpeg' });
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      photoInput.files = dt.files;
+      photoPreview.src = URL.createObjectURL(blob);
+      photoPreview.classList.remove('hidden');
+      stream.getTracks().forEach(t => t.stop());
+      cameraContainer.classList.add('hidden');
+      cameraBtn.textContent = '📷 Retake';
+      cameraBtn.classList.remove('hidden');
+    }, 'image/jpeg', 0.85);
+  });
+</script>
+{% endblock %}

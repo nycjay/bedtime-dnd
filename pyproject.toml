@@ -1,0 +1,33 @@
+[project]
+name = "dnd"
+version = "1.0.0"
+description = "A mobile-optimized AI Dungeon Master for bedtime RPG sessions with kids"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi>=0.136.1",
+    "google-genai>=2.3.0",
+    "httpx>=0.28.1",
+    "jinja2>=3.1.6",
+    "python-multipart>=0.0.28",
+    "supabase>=2.30.0",
+    "truststore>=0.10.4",
+    "uvicorn>=0.47.0",
+]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=9.0.3",
+    "rembg[cpu]>=2.0.75",
+    "ruff>=0.15.13",
+    "ty>=0.0.37",
+]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

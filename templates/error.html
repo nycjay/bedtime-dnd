@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}{{ code }} - {{ app_name }}{% endblock %}
+{% block content %}
+<div class="flex flex-col items-center justify-center space-y-4 py-8 text-center">
+  <img src="/static/error-bg.png" alt="A wizard's cluttered study" class="w-48 h-48 rounded-xl object-cover opacity-90">
+  {% if code == 404 %}
+  <h1 class="text-3xl font-bold">Scroll Not Found</h1>
+  <p class="muted max-w-xs">You search the wizard's cluttered desk, but this particular scroll seems to have been misplaced among the dusty tomes...</p>
+  {% elif code == 500 %}
+  <h1 class="text-3xl font-bold">The Magic Fizzled</h1>
+  <p class="muted max-w-xs">A spell went awry in the wizard's tower. The candles flicker and smoke rises from a pile of singed scrolls...</p>
+  {% else %}
+  <h1 class="text-3xl font-bold">Something Went Wrong</h1>
+  <p class="muted max-w-xs">{{ message }}</p>
+  {% endif %}
+  <a href="/campaigns" class="btn-primary px-6 py-3 rounded mt-4">Return to the Tavern</a>
+</div>
+{% endblock %}

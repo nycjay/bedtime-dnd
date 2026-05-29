@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ campaign.name }} - Play</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/theme.css">
+  <style>
+    .dice { transition: transform 0.3s; }
+    .dice.rolling { animation: roll 0.5s ease-in-out; }
+    .dice.waiting { animation: glow 1.5s ease-in-out infinite; box-shadow: 0 0 12px var(--accent); }
+    @keyframes roll { 0% { transform: rotate(0deg) scale(1); } 50% { transform: rotate(180deg) scale(1.2); } 100% { transform: rotate(360deg) scale(1); } }
+    @keyframes glow { 0%, 100% { box-shadow: 0 0 8px var(--accent); } 50% { box-shadow: 0 0 20px var(--accent); } }
+  </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden" data-theme="dark" style="background: var(--bg); color: var(--text)">
+  <script>
+    (function() {
+      let t = localStorage.getItem('theme') || 'dark';
+      if (t === 'system') t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      document.body.setAttribute('data-theme', t);
+    })();
+  </script>
+
+  <!-- HP Monitors - sticky top -->
+  <div class="sticky top-0 z-10 card border-b px-4 py-2" style="border-color: color-mix(in srgb, var(--text) 15%, transparent)">
+    <div class="flex items-center gap-3 max-w-lg mx-auto">
+      <a href="/campaigns/{{ campaign.id }}" class="muted text-sm shrink-0">← Exit</a>
+      <div class="flex gap-3 overflow-x-auto flex-1 py-1" style="-webkit-overflow-scrolling: touch;">
+      {% for m in members %}
+      {% set class_colors = {
+        'warrior': '#ef4444', 'wizard': '#a855f7', 'rogue': '#6b7280', 'healer': '#22c55e',
+        'ranger': '#16a34a', 'paladin': '#eab308', 'bard': '#ec4899', 'druid': '#84cc16',
+        'pirate': '#1e3a5f', 'dragon': '#f97316', 'dragonborn': '#f97316', 'fairy': '#e879f9',
+        'beastmaster': '#a3e635', 'dwarf smith': '#b45309', 'elf knight': '#60a5fa',
+        'clockwork knight': '#94a3b8'
+      } %}
+      {% set ring_color = class_colors.get(m.players.class|lower, '#d97706') %}
+      <div class="shrink-0 cursor-pointer" onclick="toggleInventory('{{ m.player_id }}')">
+        <div class="flex items-center gap-2">
+          {% if m.players.avatar_url %}
+          <img src="{{ m.players.avatar_url }}" class="w-8 h-8 rounded-full object-cover ring-2" style="--tw-ring-color: {{ ring_color }}">
+          {% else %}
+          <div class="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-xs ring-2" style="--tw-ring-color: {{ ring_color }}">🧙</div>
+          {% endif %}
+          <div class="text-xs">
+            <div class="font-bold truncate max-w-[80px]">{{ m.players.name }}</div>
+            <div style="color: {% if m.current_hp <= m.players.max_hp // 4 %}#ef4444{% elif m.current_hp <= m.players.max_hp // 2 %}#eab308{% else %}#22c55e{% endif %}">{{ m.current_hp }}/{{ m.players.max_hp }}</div>
+            <div class="flex gap-0.5 mt-0.5">
+              {% for i in range(3) %}
+              <div class="w-2 h-1 rounded-full {% if i < (m.players.xp or 0) %}bg-amber-400{% else %}bg-gray-600{% endif %}"></div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+      </div>
+    </div>
+    <!-- Inventory panels (hidden by default) -->
+    {% for m in members %}
+    <div id="inv-{{ m.player_id }}" class="hidden max-w-lg mx-auto mt-2 p-2 rounded text-xs card">
+      <div class="flex items-center justify-between mb-1">
+        <span class="font-bold" style="color: var(--accent)">{{ m.players.name }}</span>
+        <span class="muted">Lv{{ m.players.level or 1 }} {{ m.players.class }}</span>
+      </div>
+      <div class="flex gap-3 mb-2 muted">
+        <span>⚔️ {{ m.players.might }}</span>
+        <span>🏃 {{ m.players.agility }}</span>
+        <span>🧠 {{ m.players.wits }}</span>
+        <span>⭐ {{ m.players.xp or 0 }}/3 XP</span>
+      </div>
+      {% if m.inventory %}
+      <ul class="space-y-1">
+        {% for item in m.inventory %}
+        <li class="flex items-center gap-1">
+          {% set sprite = item_sprite(item) %}
+          {% if sprite %}<img src="{{ sprite }}" class="w-5 h-5 inline-block" alt="">{% else %}🎒{% endif %}
+          {{ item }}
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="muted">No items yet</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Story viewport -->
+  <div class="flex-1 overflow-y-auto p-4 pb-20 max-w-lg mx-auto w-full" id="story">
+    <!-- Recap buttons -->
+    {% if logs %}
+    <div class="flex gap-2 mb-4">
+      <button type="button" id="recap-full-btn" class="flex-1 btn-primary p-2 rounded text-xs">📖 Quest Summary</button>
+      <button type="button" id="recap-last-btn" class="flex-1 btn-primary p-2 rounded text-xs">⏮️ Previously On...</button>
+    </div>
+    {% endif %}
+    <div id="recap-output" class="hidden mb-4 card p-3 rounded-lg text-sm italic"></div>
+    {% for log in logs %}
+    <div class="mb-4 {% if log.role == 'user' %}text-sm italic{% endif %}" {% if log.role == 'user' %}style="color: var(--accent)"{% endif %}>
+      {% if log.role == 'user' %}<span class="muted">▶</span> {% endif %}<span class="story-text">{{ log.content }}</span>
+      {% if log.role == 'model' %}
+      <button type="button" class="tts-btn text-xs ml-2 px-2 py-1 rounded opacity-70 hover:opacity-100" style="background: var(--input); color: var(--accent)" data-text="{{ log.content|e }}">🔊</button>
+      {% endif %}
+      {% if log.image_url %}
+      <img src="{{ log.image_url }}" alt="Scene illustration" class="w-full rounded-lg mt-2 opacity-90">
+      {% endif %}
+    </div>
+    {% endfor %}
+    <div id="bottom"></div>
+    <div id="stream-output" class="mb-4"></div>
+    <div id="loading" class="hidden flex items-center gap-2 muted text-sm mb-4">
+      <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+      <span>The DM is thinking...</span>
+    </div>
+  </div>
+  <script>document.getElementById('story').scrollTop = 99999;</script>
+
+  <!-- Action bar - sticky bottom -->
+  <div class="sticky bottom-0 card border-t p-3" style="border-color: color-mix(in srgb, var(--text) 15%, transparent)">
+    {% if is_shared and not is_my_turn %}
+    <div class="max-w-lg mx-auto text-center muted text-sm py-2">
+      ⏳ Waiting for {{ turn_holder_name }} to take their turn...
+    </div>
+    {% else %}
+    <div class="max-w-lg mx-auto flex gap-2">
+      <!-- Dice roller -->
+      <button type="button" id="dice-btn" class="dice w-12 h-12 rounded-lg font-bold text-lg flex items-center justify-center" style="background: var(--accent)" title="Roll D20">🎲</button>
+      <!-- Action input -->
+      <form method="post" action="/campaigns/{{ campaign.id }}/action" class="flex-1 flex gap-2" id="action-form">
+        <input name="action" id="action-input" placeholder="What do you do?" required class="flex-1 p-3 rounded input text-sm">
+        <button type="submit" id="send-btn" class="btn-primary px-4 rounded font-bold">→</button>
+      </form>
+      <!-- Bedtime -->
+      <button type="button" id="bedtime-btn" class="w-12 h-12 rounded-lg text-lg flex items-center justify-center card" title="Wrap up for bedtime">🌙</button>
+    </div>
+    <!-- Dice result (overlay) -->
+    <div id="dice-result" class="hidden fixed left-1/2 -translate-x-1/2 bottom-24 text-center font-bold text-3xl px-6 py-3 rounded-xl z-50" style="background: var(--card); border: 2px solid var(--accent); box-shadow: 0 4px 20px rgba(0,0,0,0.4);"></div>
+    {% endif %}
+  </div>
+
+  <script>
+    // State flags
+    let isStreaming = false;
+
+    // Simple markdown rendering
+    function renderMd(text) {
+      return text
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        .replace(/\n\n/g, '</p><p class="mt-2">')
+        .replace(/\n/g, '<br>');
+    }
+    // Render existing story text
+    document.querySelectorAll('.story-text').forEach(el => { el.innerHTML = renderMd(el.textContent); });
+
+    // Check if the last DM message asks for a dice roll
+    const lastStory = document.querySelectorAll('.story-text');
+    if (lastStory.length > 0) {
+      const lastText = lastStory[lastStory.length - 1].textContent.toLowerCase();
+      const rollPhrases = ['roll to', 'roll the dice', 'roll a', 'roll your', 'make a roll', 'time to roll'];
+      if (rollPhrases.some(p => lastText.includes(p))) {
+        document.getElementById('dice-btn')?.classList.add('waiting');
+      }
+    }
+
+    // Inventory toggle
+    function toggleInventory(playerId) {
+      const panel = document.getElementById('inv-' + playerId);
+      const wasHidden = panel.classList.contains('hidden');
+      // Hide all panels first
+      document.querySelectorAll('[id^="inv-"]').forEach(p => p.classList.add('hidden'));
+      if (wasHidden) panel.classList.remove('hidden');
+    }
+
+    // Auto-scroll to bottom
+    const story = document.getElementById('story');
+    story.scrollTop = story.scrollHeight;
+
+    // Recap functionality
+    const recapOutput = document.getElementById('recap-output');
+    function streamRecap(url) {
+      recapOutput.textContent = '';
+      recapOutput.classList.remove('hidden');
+      const evtSource = new EventSource(url);
+      evtSource.onmessage = function(e) {
+        if (e.data === '[DONE]') { evtSource.close(); return; }
+        if (e.data.startsWith('[ERROR]')) { recapOutput.textContent += '\n⚠️ ' + e.data; evtSource.close(); return; }
+        recapOutput.textContent += e.data;
+      };
+      evtSource.onerror = function() { evtSource.close(); };
+    }
+    const fullBtn = document.getElementById('recap-full-btn');
+    const lastBtn = document.getElementById('recap-last-btn');
+    if (fullBtn) fullBtn.addEventListener('click', () => streamRecap('/campaigns/{{ campaign.id }}/recap/full'));
+    if (lastBtn) lastBtn.addEventListener('click', () => streamRecap('/campaigns/{{ campaign.id }}/recap/last-session'));
+
+    // Stream narrative on page load if DM needs to respond (only if it's my turn)
+    const streamOutput = document.getElementById('stream-output');
+    const lastLogRole = '{{ last_log_role }}';
+    const isMyTurn = {{ is_my_turn | tojson }};
+    if (isMyTurn && (!{{ has_logs | tojson }} || lastLogRole === 'user')) {
+      streamNarrative();
+    }
+
+    function streamNarrative() {
+      streamOutput.innerHTML = '';
+      let rawText = '';
+      isStreaming = true;
+      document.getElementById('loading').classList.remove('hidden');
+      const evtSource = new EventSource('/campaigns/{{ campaign.id }}/stream');
+      evtSource.onmessage = function(e) {
+        document.getElementById('loading').classList.add('hidden');
+        if (e.data === '[DONE]') {
+          isStreaming = false;
+          evtSource.close();
+          // Fetch complete text from DB to fix any dropped chunks
+          fetch('/campaigns/{{ campaign.id }}/last-response')
+            .then(r => r.json())
+            .then(data => {
+              if (data.content) {
+                streamOutput.innerHTML = renderMd(data.content);
+              }
+            })
+            .catch(() => {});
+          return;
+        }
+        if (e.data.startsWith('[ERROR]')) {
+          streamOutput.innerHTML += '<br><span class="muted">⚠️ Something went wrong.</span>';
+          evtSource.close();
+          return;
+        }
+        rawText += e.data;
+        streamOutput.innerHTML = renderMd(rawText);
+        story.scrollTop = story.scrollHeight;
+        // Detect if DM is asking for a dice roll
+        const rollPhrases = ['roll to', 'roll the dice', 'roll a', 'roll your', 'make a roll', 'time to roll'];
+        if (rollPhrases.some(p => rawText.toLowerCase().includes(p))) {
+          document.getElementById('dice-btn').classList.add('waiting');
+        }
+      };
+      evtSource.addEventListener('inventory', function(e) {
+        const data = JSON.parse(e.data);
+        // Glow the character's avatar
+        const avatarEl = document.querySelector('[onclick*="' + data.player_id + '"]');
+        if (avatarEl) {
+          avatarEl.classList.add('waiting');
+          setTimeout(() => avatarEl.classList.remove('waiting'), 3000);
+        }
+        // Show toast
+        const toast = document.createElement('div');
+        toast.className = 'text-xs text-center py-1 px-3 rounded mb-2';
+        toast.style.cssText = 'background: var(--card); color: var(--accent); border: 1px solid var(--accent);';
+        toast.textContent = data.type === 'gained' ? '🎒 ' + data.player_name + ' gained: ' + data.item
+          : data.type === 'xp' ? '⭐ ' + data.player_name + ' earned XP! (' + data.item + ')'
+          : data.type === 'level_up' ? '🎉 ' + data.player_name + ' leveled up! ' + data.item
+          : '❌ ' + data.player_name + ' lost: ' + data.item;
+        streamOutput.before(toast);
+        setTimeout(() => toast.remove(), 5000);
+      });
+      evtSource.onerror = function() {
+        document.getElementById('loading').classList.add('hidden');
+        isStreaming = false;
+        evtSource.close();
+      };
+    }
+
+    // Dice roller
+    const diceBtn = document.getElementById('dice-btn');
+    const diceResult = document.getElementById('dice-result');
+    const actionInput = document.getElementById('action-input');
+    const diceSounds = ['/static/audio/dice1.mp3', '/static/audio/dice2.mp3', '/static/audio/dice3.mp3'];
+    if (diceBtn) diceBtn.addEventListener('click', () => {
+      diceBtn.classList.remove('waiting');
+      if (localStorage.getItem('kq-sound') !== 'off') {
+        new Audio(diceSounds[Math.floor(Math.random() * 3)]).play();
+      }
+      diceBtn.classList.add('rolling');
+      setTimeout(() => {
+        const roll = Math.floor(Math.random() * 20) + 1;
+        diceBtn.classList.remove('rolling');
+        let label = `🎲 ${roll}`;
+        let color = '#d97706'; // amber default
+        if (roll === 20) { label += ' — CRITICAL HIT! ⚡'; color = '#22c55e'; }
+        else if (roll >= 18) { label += ' — Amazing!'; color = '#22c55e'; }
+        else if (roll >= 11) { color = '#60a5fa'; }
+        else if (roll >= 6) { label += ' — Partial...'; color = '#eab308'; }
+        else if (roll === 1) { label += ' — Critical fail! 💀'; color = '#ef4444'; }
+        else { label += ' — Uh oh...'; color = '#ef4444'; }
+        diceResult.textContent = label;
+        diceResult.style.color = color;
+        diceResult.classList.remove('hidden');
+        // Auto-submit the roll
+        actionInput.value = `[Rolled a ${roll}]`;
+        document.getElementById('action-form').submit();
+        setTimeout(() => diceResult.classList.add('hidden'), 6000);
+      }, 500);
+    });
+
+    // Disable send on submit
+    const actionForm = document.getElementById('action-form');
+    if (actionForm) actionForm.addEventListener('submit', function() {
+      document.getElementById('send-btn').disabled = true;
+      document.getElementById('send-btn').textContent = '...';
+    });
+
+    // Text-to-speech
+    let voicesLoaded = false;
+    function ensureVoices() {
+      if (!voicesLoaded && speechSynthesis.getVoices().length > 0) voicesLoaded = true;
+    }
+    speechSynthesis.onvoiceschanged = ensureVoices;
+    ensureVoices();
+
+    document.querySelectorAll('.tts-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (localStorage.getItem('kq-sound') === 'off') return;
+        if (speechSynthesis.speaking) {
+          speechSynthesis.cancel();
+          btn.textContent = '🔊';
+          return;
+        }
+        const utter = new SpeechSynthesisUtterance(btn.dataset.text);
+        const voiceName = localStorage.getItem('kq-voice');
+        if (voiceName) {
+          const voices = speechSynthesis.getVoices();
+          const voice = voices.find(v => v.name === voiceName);
+          if (voice) utter.voice = voice;
+        }
+        utter.rate = 0.9;
+        btn.textContent = '⏹️';
+        utter.onend = () => { btn.textContent = '🔊'; };
+        speechSynthesis.speak(utter);
+      });
+    });
+
+    // Realtime: auto-update when new game logs are inserted (for spectators)
+    const sbClient = supabase.createClient('{{ supabase_url }}', '{{ supabase_key }}', {
+      realtime: { params: { apikey: '{{ supabase_key }}' } }
+    });
+    sbClient.realtime.setAuth('{{ access_token }}');
+    sbClient.channel('game-{{ campaign.id }}')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'game_logs',
+        filter: 'campaign_id=eq.{{ campaign.id }}'
+      }, (payload) => {
+        // Reload for spectators when new model response arrives
+        if (!isStreaming && payload.new && payload.new.role === 'model') {
+          location.reload();
+        }
+      })
+      .subscribe();
+
+    // Bedtime mode
+    const bedtimeBtn = document.getElementById('bedtime-btn');
+    if (bedtimeBtn) bedtimeBtn.addEventListener('click', function() {
+      if (confirm('Wrap up the adventure for tonight?')) {
+        const input = document.getElementById('action-input');
+        input.value = '[BEDTIME] Time to stop for tonight. Find a natural stopping point within this response.';
+        document.getElementById('action-form').requestSubmit();
+      }
+    });
+  </script>
+</body>
+</html>

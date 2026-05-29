@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+{% set nav = "campaigns" %}
+{% block title %}{{ campaign.name }} - {{ app_name }}{% endblock %}
+{% block content %}
+<div class="space-y-6">
+  <a href="/campaigns" class="text-sm text-gray-400 hover:text-white">← Back</a>
+  <h1 class="text-2xl font-bold">🏰 {{ campaign.name }}</h1>
+
+  {% if request.query_params.get('saved') %}
+  <div data-flash class="bg-green-900 text-green-300 p-3 rounded text-sm">✓ Saved</div>
+  {% endif %}
+
+  {% if member_ids %}
+  <a href="/campaigns/{{ campaign.id }}/play" class="block w-full bg-green-700 hover:bg-green-600 p-4 rounded-lg font-bold text-center text-lg">▶ Play</a>
+  {% else %}
+  <div class="card p-4 rounded-lg text-gray-500 text-center">Add characters to the party below to start playing.</div>
+  {% endif %}
+
+  <!-- Character Picker -->
+  <form method="post" action="/campaigns/{{ campaign.id }}/members" class="card p-4 rounded-lg space-y-3">
+    <label class="block text-sm text-gray-400 font-bold">Party Members</label>
+    {% if players %}
+    <div class="space-y-2">
+      {% for p in players %}
+      {% set is_mine = p.id in my_player_ids %}
+      <label class="flex items-center gap-3 p-3 rounded input {% if is_mine %}cursor-pointer has-[:checked]:ring-2 has-[:checked]:ring-indigo-500{% else %}opacity-60{% endif %}">
+        {% if is_mine %}
+        <input type="checkbox" name="player_ids" value="{{ p.id }}" {% if p.id in member_ids %}checked{% endif %} class="hidden">
+        {% else %}
+        <input type="checkbox" disabled {% if p.id in member_ids %}checked{% endif %} class="hidden">
+        {% endif %}
+        {% if p.avatar_url %}
+        <div class="w-10 h-10 rounded-full overflow-hidden shrink-0">
+          <img src="{{ p.avatar_url }}" alt="{{ p.name }}" class="w-full h-full object-cover scale-[1.15]">
+        </div>
+        {% else %}
+        <div class="w-10 h-10 rounded-full bg-gray-600 flex items-center justify-center text-sm">🧙</div>
+        {% endif %}
+        <div>
+          <div class="font-bold text-sm">{{ p.name }}</div>
+          <div class="text-gray-400 text-xs">{{ p.class }}{% if p.profiles %} · {{ p.profiles.display_name }}{% elif shares %} · Yours{% endif %}</div>
+        </div>
+      </label>
+      {% endfor %}
+    </div>
+    <button type="submit" class="w-full btn-primary p-3 rounded font-bold">Save Party</button>
+    {% if not my_player_ids %}
+    <p class="text-sm muted mt-2">🧙 <a href="/players/new" style="color: var(--accent)">Create a character</a> to join the adventure!</p>
+    {% endif %}
+    {% else %}
+    <p class="text-gray-500 text-sm">No characters yet. <a href="/players/new" style="color: var(--accent)">Create one first.</a></p>
+    {% endif %}
+  </form>
+
+  {% if member_ids|length > 1 %}
+  <!-- Reorder Party -->
+  <form method="post" action="/campaigns/{{ campaign.id }}/reorder" class="card p-4 rounded-lg space-y-3" id="reorder-form">
+    <label class="block text-sm muted font-bold">Party Order</label>
+    <p class="text-xs muted">The DM addresses characters in this order.</p>
+    <div id="reorder-list" class="space-y-2">
+      {% for pid in member_ids %}
+      {% set p = players|selectattr('id', 'equalto', pid)|first %}
+      {% if p %}
+      <div class="flex items-center gap-2 p-2 rounded input" data-id="{{ p.id }}">
+        <input type="hidden" name="order" value="{{ p.id }}">
+        <span class="text-sm font-bold flex-1">{{ p.name }}</span>
+        <button type="button" onclick="moveUp(this)" class="text-xs px-2 py-1 rounded hover:bg-gray-600">▲</button>
+        <button type="button" onclick="moveDown(this)" class="text-xs px-2 py-1 rounded hover:bg-gray-600">▼</button>
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+    <button type="submit" class="w-full btn-primary p-3 rounded font-bold">Save Order</button>
+  </form>
+  <script>
+    function moveUp(btn) {
+      const item = btn.closest('[data-id]');
+      const prev = item.previousElementSibling;
+      if (prev) item.parentNode.insertBefore(item, prev);
+    }
+    function moveDown(btn) {
+      const item = btn.closest('[data-id]');
+      const next = item.nextElementSibling;
+      if (next) item.parentNode.insertBefore(next, item);
+    }
+  </script>
+  {% endif %}
+
+  <!-- Campaign Settings -->
+  <form method="post" action="/campaigns/{{ campaign.id }}/edit" class="card p-4 rounded-lg space-y-4">
+    <label class="block text-sm text-gray-400 font-bold">Settings</label>
+    <div>
+      <label class="block text-sm text-gray-400 mb-1">Name</label>
+      <input name="name" value="{{ campaign.name }}" required class="w-full p-3 rounded input">
+    </div>
+    <div>
+      <label class="block text-sm text-gray-400 mb-2">Adventure Theme</label>
+      <div class="grid grid-cols-2 gap-2 mb-2">
+        <button type="button" class="theme-btn input hover:bg-gray-600 p-2 rounded text-xs text-left" data-theme="Dungeon Crawl — explore ancient ruins, fight monsters, find treasure">🏰 Dungeon Crawl</button>
+        <button type="button" class="theme-btn input hover:bg-gray-600 p-2 rounded text-xs text-left" data-theme="Rescue Mission — save someone who's been captured or lost">🦸 Rescue Mission</button>
+        <button type="button" class="theme-btn input hover:bg-gray-600 p-2 rounded text-xs text-left" data-theme="Mystery — solve a puzzle, find clues, figure out what happened">🔍 Mystery</button>
+        <button type="button" class="theme-btn input hover:bg-gray-600 p-2 rounded text-xs text-left" data-theme="Epic Quest — journey across the land to find a legendary artifact">🗺️ Epic Quest</button>
+        <button type="button" class="theme-btn input hover:bg-gray-600 p-2 rounded text-xs text-left" data-theme="Monster Hunt — track and defeat a fearsome creature terrorizing the land">🐉 Monster Hunt</button>
+        <button type="button" class="theme-btn input hover:bg-gray-600 p-2 rounded text-xs text-left" data-theme="Defense — protect a village or castle from an incoming attack">🛡️ Defense</button>
+      </div>
+      <textarea name="summary" id="theme-input" rows="2" placeholder="Or write your own theme..." class="w-full p-3 rounded input text-sm">{{ campaign.summary or '' }}</textarea>
+    </div>
+    <script>
+      document.querySelectorAll('.theme-btn').forEach(btn => {
+        btn.addEventListener('click', () => { document.getElementById('theme-input').value = btn.dataset.theme; });
+      });
+    </script>
+    <div>
+      <label class="block text-sm text-gray-400 mb-1">Difficulty</label>
+      <select name="difficulty" class="w-full p-3 rounded input">
+        <option value="easy" {% if campaign.difficulty == 'easy' %}selected{% endif %}>Easy</option>
+        <option value="normal" {% if campaign.difficulty == 'normal' %}selected{% endif %}>Normal</option>
+        <option value="hard" {% if campaign.difficulty == 'hard' %}selected{% endif %}>Hard</option>
+      </select>
+    </div>
+    <div>
+      <label class="block text-sm text-gray-400 mb-1">Content Rating</label>
+      <select name="rating" id="rating-select" class="w-full p-3 rounded input">
+        <option value="campfire" {% if campaign.rating == 'campfire' %}selected{% endif %}>🏕️ Campfire</option>
+        <option value="quest" {% if campaign.rating == 'quest' %}selected{% endif %}>⚔️ Quest</option>
+        <option value="dragons_lair" {% if campaign.rating == 'dragons_lair' %}selected{% endif %}>🐉 Dragon's Lair</option>
+      </select>
+      <p id="rating-desc" class="text-xs muted mt-1"></p>
+      <script>
+        const ratingDescs = {
+          campfire: 'Cozy storytelling, no real threat. Problems solved with creativity and kindness.',
+          quest: 'Danger exists, heroes get knocked down but not out. Dramatic rescues possible.',
+          dragons_lair: 'High stakes, real consequences. Combat is tense and meaningful.'
+        };
+        const sel = document.getElementById('rating-select');
+        const desc = document.getElementById('rating-desc');
+        function updateDesc() { desc.textContent = ratingDescs[sel.value] || ''; }
+        sel.addEventListener('change', updateDesc);
+        updateDesc();
+      </script>
+    </div>
+    <button type="submit" class="w-full btn-primary p-3 rounded font-bold">Save Settings</button>
+  </form>
+
+  {% if is_owner %}
+  <!-- Share Campaign -->
+  <div class="card p-4 rounded-lg space-y-3">
+    <label class="block text-sm muted font-bold">Share Campaign</label>
+    {% if shares %}
+    <div class="space-y-1">
+      {% for s in shares %}
+      <div class="text-sm">🤝 {{ s.profiles.display_name }}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% if friends %}
+    <div class="space-y-1">
+      <p class="text-xs muted">Quick invite a friend:</p>
+      <div class="flex flex-wrap gap-2">
+        {% for f in friends %}
+        {% if f.id not in shared_profile_ids %}
+        <form method="post" action="/campaigns/{{ campaign.id }}/share-friend" class="inline">
+          <input type="hidden" name="friend_id" value="{{ f.id }}">
+          <button type="submit" class="px-3 py-1 rounded text-xs input">🤝 {{ f.display_name }}</button>
+        </form>
+        {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+    <form method="post" action="/campaigns/{{ campaign.id }}/share" class="flex gap-2">
+      <input name="email" type="email" placeholder="Or invite by email" required class="flex-1 p-3 rounded input text-sm">
+      <button type="submit" class="btn-primary px-4 rounded text-sm">Invite</button>
+    </form>
+    {% if request.query_params.get('error') == 'user_not_found' %}
+    <p class="text-red-400 text-xs">User not found. They need to sign up first.</p>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <a href="/campaigns/{{ campaign.id }}/history" class="block w-full p-3 rounded-lg font-bold text-center input text-sm">📖 Adventure History</a>
+
+  {% if is_owner %}
+  <form method="post" action="/campaigns/{{ campaign.id }}/delete" id="delete-form">
+    <button type="submit" class="w-full btn-danger p-3 rounded font-bold text-red-300">Delete Campaign</button>
+  </form>
+  <script>
+    document.getElementById('delete-form').addEventListener('submit', function(e) {
+      if (!confirm('Delete this campaign? This cannot be undone.')) e.preventDefault();
+    });
+  </script>
+  {% endif %}
+</div>
+{% endblock %}

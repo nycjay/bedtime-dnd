@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% set nav = "settings" %}
+{% block title %}Settings - {{ app_name }}{% endblock %}
+{% block content %}
+<div class="space-y-6">
+  <h1 class="text-2xl font-bold">⚙️ Settings</h1>
+
+  {% if request.query_params.get('saved') %}
+  <div data-flash class="bg-green-900 text-green-300 p-3 rounded text-sm">✓ Saved</div>
+  {% endif %}
+
+  <div class="card p-4 rounded-lg space-y-2">
+    <p class="muted text-sm">Logged in as</p>
+    <p>{{ user.email }}</p>
+  </div>
+
+  <form method="post" action="/settings/display-name" class="card p-4 rounded-lg space-y-3">
+    <label class="block text-sm muted font-bold">Display Name</label>
+    <p class="text-xs muted">This is how other players see you when sharing campaigns.</p>
+    <div class="flex gap-2">
+      <input name="display_name" value="{{ profile.display_name or '' }}" placeholder="e.g. The Smiths" required class="flex-1 p-3 rounded input text-sm">
+      <button type="submit" class="btn-primary px-4 rounded text-sm">Save</button>
+    </div>
+  </form>
+
+  {% if friends %}
+  <a href="/friends" class="block card p-4 rounded-lg">
+    <div class="flex items-center justify-between">
+      <span class="text-sm font-bold">🤝 Friends ({{ friends|length }})</span>
+      <span class="text-xs muted">Manage →</span>
+    </div>
+  </a>
+  {% else %}
+  <a href="/friends" class="block card p-4 rounded-lg">
+    <span class="text-sm font-bold">🤝 Add Friends</span>
+    <p class="text-xs muted mt-1">Add friends to easily share campaigns</p>
+  </a>
+  {% endif %}
+
+  <div class="card p-4 rounded-lg space-y-4">
+    <label class="block text-sm muted font-bold">Theme</label>
+    <div class="grid grid-cols-2 gap-2">
+      <button type="button" data-theme="system" class="theme-opt p-3 rounded text-center text-sm border-2 border-gray-500">💻 System</button>
+      <button type="button" data-theme="dark" class="theme-opt p-3 rounded text-center text-sm border-2 border-gray-500">🌙 Dark</button>
+      <button type="button" data-theme="light" class="theme-opt p-3 rounded text-center text-sm border-2 border-gray-500">☀️ Light</button>
+      <button type="button" data-theme="parchment" class="theme-opt p-3 rounded text-center text-sm border-2 border-gray-500">📜 Parchment</button>
+    </div>
+  </div>
+
+  <div class="card p-4 rounded-lg space-y-4">
+    <label class="block text-sm muted font-bold">Text Size</label>
+    <div class="grid grid-cols-3 gap-2">
+      <button type="button" data-size="sm" class="size-opt p-3 rounded text-center text-sm input">Small</button>
+      <button type="button" data-size="base" class="size-opt p-3 rounded text-center text-sm input">Normal</button>
+      <button type="button" data-size="lg" class="size-opt p-3 rounded text-center text-sm input">Large</button>
+    </div>
+  </div>
+
+  <div class="card p-4 rounded-lg space-y-4">
+    <label class="block text-sm muted font-bold">Sound</label>
+    <div class="flex items-center justify-between">
+      <span class="text-sm">Sound effects</span>
+      <button type="button" id="sound-toggle" class="px-4 py-2 rounded input text-sm font-bold"></button>
+    </div>
+    <div>
+      <label class="block text-sm muted mb-1">Narrator Voice</label>
+      <select id="voice-select" class="w-full p-3 rounded input text-sm"></select>
+      <p class="text-xs muted mt-1">Voices vary by device. If your chosen voice isn't available here, the default will be used.</p>
+      <button type="button" id="voice-test" class="mt-2 text-xs muted hover:underline">▶ Test voice</button>
+    </div>
+  </div>
+
+  <a href="/guide" class="block text-center card p-3 rounded-lg font-bold">📖 Dungeon Master's Guide</a>
+
+  <a href="/logout" class="block text-center btn-danger p-3 rounded font-bold text-white">Logout</a>
+
+  <form method="post" action="/settings/delete-account" onsubmit="return confirm('Are you absolutely sure? This will permanently delete your account, all your characters, and all your campaigns. This cannot be undone.')">
+    <button type="submit" class="w-full p-3 rounded text-sm muted hover:text-red-400" style="background: transparent; border: 1px solid rgba(127,29,29,0.4);">
+      Delete Account
+    </button>
+  </form>
+</div>
+
+<script>
+  function applyTheme(theme) {
+    localStorage.setItem('theme', theme);
+    let resolved = theme;
+    if (theme === 'system') resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    document.body.setAttribute('data-theme', resolved);
+    document.querySelectorAll('.theme-opt').forEach(b => {
+      b.classList.toggle('ring-2', b.dataset.theme === theme);
+      b.classList.toggle('ring-indigo-500', b.dataset.theme === theme);
+    });
+  }
+
+  function applySize(size) {
+    localStorage.setItem('kq-size', size);
+    document.documentElement.classList.remove('text-sm', 'text-base', 'text-lg');
+    document.documentElement.classList.add('text-' + size);
+    document.querySelectorAll('.size-opt').forEach(b => {
+      b.classList.toggle('ring-2', b.dataset.size === size);
+      b.classList.toggle('ring-indigo-500', b.dataset.size === size);
+    });
+  }
+
+  document.querySelectorAll('.theme-opt').forEach(b => b.addEventListener('click', () => applyTheme(b.dataset.theme)));
+  document.querySelectorAll('.size-opt').forEach(b => b.addEventListener('click', () => applySize(b.dataset.size)));
+
+  applyTheme(localStorage.getItem('theme') || 'dark');
+  applySize(localStorage.getItem('kq-size') || 'base');
+
+  // Sound toggle
+  const soundBtn = document.getElementById('sound-toggle');
+  function applySound() {
+    const on = localStorage.getItem('kq-sound') !== 'off';
+    soundBtn.textContent = on ? '🔊 On' : '🔇 Off';
+  }
+  soundBtn.addEventListener('click', () => {
+    const on = localStorage.getItem('kq-sound') !== 'off';
+    localStorage.setItem('kq-sound', on ? 'off' : 'on');
+    applySound();
+  });
+  applySound();
+
+  // Voice picker
+  const voiceSelect = document.getElementById('voice-select');
+  function loadVoices() {
+    const exclude = ['Albert','Bad News','Bahh','Bells','Boing','Bubbles','Cellos','Eddy','Flo','Fred','Good News','Grandma','Grandpa','Jester','Junior','Kathy','Organ','Ralph','Reed','Rocko','Sandy','Shelley','Superstar','Trinoids','Whisper','Wobble','Zarvox'];
+    const voices = speechSynthesis.getVoices().filter(v => v.lang.startsWith('en') && !exclude.some(e => v.name.includes(e)));
+    voiceSelect.innerHTML = voices.map(v =>
+      '<option value="' + v.name + '"' + (v.name === localStorage.getItem('kq-voice') ? ' selected' : '') + '>' + v.name + '</option>'
+    ).join('');
+  }
+  speechSynthesis.onvoiceschanged = loadVoices;
+  loadVoices();
+  voiceSelect.addEventListener('change', () => localStorage.setItem('kq-voice', voiceSelect.value));
+  document.getElementById('voice-test').addEventListener('click', () => {
+    speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance('The dragon stirs in its lair, and the adventure begins!');
+    const voice = speechSynthesis.getVoices().find(v => v.name === voiceSelect.value);
+    if (voice) utter.voice = voice;
+    utter.rate = 0.9;
+    speechSynthesis.speak(utter);
+  });
+</script>
+{% endblock %}

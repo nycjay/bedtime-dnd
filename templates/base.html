@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#d97706">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/static/favicon.png">
+  <link rel="apple-touch-icon" href="/static/icon-192.png">
+  <title>{% block title %}{{ app_name }}{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/theme.css">
+  <style>
+    /* Desktop: vignette + scroll frame on wide screens */
+    @media (min-width: 768px) {
+      .content-frame {
+        border-left: 6px solid color-mix(in srgb, var(--accent) 30%, #3d2b1f);
+        border-right: 6px solid color-mix(in srgb, var(--accent) 30%, #3d2b1f);
+        border-image: linear-gradient(to bottom, #5c3d2e, #8b6914, #5c3d2e) 1;
+        box-shadow:
+          -8px 0 12px -4px rgba(60, 40, 20, 0.4),
+          8px 0 12px -4px rgba(60, 40, 20, 0.4);
+        background: var(--bg);
+        min-height: 100vh;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen pb-20" data-theme="dark">
+  <script>
+    (function() {
+      let t = localStorage.getItem('theme') || 'dark';
+      if (t === 'system') t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      const s = localStorage.getItem('kq-size') || 'base';
+      document.body.setAttribute('data-theme', t);
+      document.documentElement.classList.add('text-' + s);
+    })();
+  </script>
+  <div class="max-w-md mx-auto p-6 content-frame">
+    {% block content %}{% endblock %}
+  </div>
+
+  <script>
+    document.querySelectorAll('[data-flash]').forEach(el => {
+      setTimeout(() => { el.style.transition = 'opacity 0.5s'; el.style.opacity = '0'; setTimeout(() => el.remove(), 500); }, 3000);
+    });
+  </script>
+
+  <!-- Bottom nav -->
+  <nav class="fixed bottom-0 left-0 right-0 card border-t" style="border-color: color-mix(in srgb, var(--text) 15%, transparent)">
+    <div class="max-w-md mx-auto flex justify-around py-3">
+      <a href="/campaigns" class="flex flex-col items-center text-xs {% if nav == 'campaigns' %}{% else %}muted{% endif %}" {% if nav == 'campaigns' %}style="color: var(--accent)"{% endif %}>
+        <span class="text-lg">🏰</span>
+        <span>Campaigns</span>
+      </a>
+      <a href="/players" class="flex flex-col items-center text-xs {% if nav == 'players' %}{% else %}muted{% endif %}" {% if nav == 'players' %}style="color: var(--accent)"{% endif %}>
+        <span class="text-lg">🧙</span>
+        <span>Characters</span>
+      </a>
+      <a href="/settings" class="flex flex-col items-center text-xs {% if nav == 'settings' %}{% else %}muted{% endif %}" {% if nav == 'settings' %}style="color: var(--accent)"{% endif %}>
+        <span class="text-lg">⚙️</span>
+        <span>Settings</span>
+      </a>
+    </div>
+  </nav>
+  <script>
+    document.querySelectorAll('form').forEach(form => {
+      form.addEventListener('submit', () => {
+        const btn = form.querySelector('button[type="submit"]');
+        if (btn && !btn.dataset.noDisable) {
+          btn.disabled = true;
+          btn.dataset.original = btn.textContent;
+          btn.textContent = '...';
+        }
+      });
+    });
+  </script>
+</body>
+</html>

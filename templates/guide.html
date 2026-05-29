@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% set nav = "settings" %}
+{% block title %}Guide - {{ app_name }}{% endblock %}
+{% block content %}
+<div class="space-y-6">
+  <a href="/settings" class="text-sm muted">← Back to Settings</a>
+  <h1 class="text-3xl font-bold">📖 Dungeon Master's Guide</h1>
+
+  <div class="card p-4 rounded-lg space-y-3">
+    <h2 class="text-xl font-bold">Getting Started</h2>
+    <p class="text-sm">{{ app_name }} is a bedtime D&D app for families. One person runs the game from their phone — the AI is your Dungeon Master, telling the story and reacting to what the players do.</p>
+    <ol class="text-sm space-y-2 list-decimal list-inside">
+      <li><strong>Create an account</strong> — tap "Sign up" on the login screen</li>
+      <li><strong>Create characters</strong> — go to the Characters tab and make one for each kid</li>
+      <li><strong>Create a campaign</strong> — give it a name, pick a theme and difficulty</li>
+      <li><strong>Add characters to the party</strong> — on the campaign page, select who's playing</li>
+      <li><strong>Hit Play!</strong> — the adventure begins</li>
+    </ol>
+  </div>
+
+  <div class="card p-4 rounded-lg space-y-3">
+    <h2 class="text-xl font-bold">Characters</h2>
+    <p class="text-sm">Each kid gets their own character with a name, class, stats, and optional avatar.</p>
+    <ul class="text-sm space-y-1">
+      <li>🧙 <strong>Classes</strong> — Warrior, Wizard, Rogue, Healer, Ranger, Elf Knight, Dwarf Smith, Druid, Bard, Paladin, Dragon, Dragonborn, Fairy, Beastmaster, Pirate, Clockwork Knight, or make your own</li>
+      <li>📊 <strong>Stats</strong> — Might, Agility, Wits (9 points total). These affect the story.</li>
+      <li>❤️ <strong>Max HP</strong> — calculated automatically (8 + Might)</li>
+      <li>📸 <strong>Avatar</strong> — upload a photo and AI generates an 80s fantasy portrait</li>
+      <li>📝 <strong>Description</strong> — backstory and traits that the DM weaves into the narrative</li>
+      <li>⬆️ <strong>Leveling Up</strong> — the DM awards XP for heroic moments, clever ideas, and great rolls. At 3 XP, characters level up automatically and earn +1 stat point to allocate on the character page.</li>
+    </ul>
+  </div>
+
+  <div class="card p-4 rounded-lg space-y-3">
+    <h2 class="text-xl font-bold">Playing the Game</h2>
+    <ul class="text-sm space-y-2">
+      <li>🎲 <strong>Dice</strong> — when the DM asks for a roll, the dice button glows. Tap it and the roll is sent automatically.</li>
+      <li>💬 <strong>Actions</strong> — type what the heroes do ("We sneak past the guard" or "I open the chest")</li>
+      <li>🎒 <strong>Inventory</strong> — tap a character's avatar in the HP bar to see their items</li>
+      <li>🖼️ <strong>Scene Art</strong> — dramatic moments may generate an illustration inline</li>
+      <li>🌙 <strong>Bedtime</strong> — tap the moon button to wrap up for the night</li>
+      <li>📖 <strong>Quest Summary</strong> — forgot what happened? Tap for a full recap.</li>
+      <li>⏮️ <strong>Previously On</strong> — quick recap of the last session.</li>
+      <li>🔊 <strong>Read Aloud</strong> — tap the speaker icon to hear the DM narrate. Tap again to stop.</li>
+      <li>📱 <strong>Follow Along</strong> — open the same quest on another device to watch live</li>
+      <li>🔀 <strong>Party Order</strong> — on the campaign page, use ▲/▼ arrows to set the order. The DM addresses characters in this order.</li>
+    </ul>
+  </div>
+
+  <div class="card p-4 rounded-lg space-y-3">
+    <h2 class="text-xl font-bold">Health Points (HP)</h2>
+    <ul class="text-sm space-y-2">
+      <li>❤️ <strong>Max HP</strong> — each character starts with 8 + Might. Visible in the top bar during play.</li>
+      <li>⚔️ <strong>Taking damage</strong> — the DM deals damage during combat or dangerous situations based on dice rolls.</li>
+      <li>💚 <strong>Healing</strong> — potions, spells, or rest can restore HP during the adventure.</li>
+      <li>💤 <strong>Long Rest</strong> — when you come back for the next session (4+ hours later), everyone's HP is fully restored automatically. No need to worry about ending on low health!</li>
+      <li>💀 <strong>At 0 HP</strong> — depends on your content rating. At Campfire, it won't happen. At Quest, heroes get knocked out and can be rescued. At Dragon's Lair, it's serious.</li>
+    </ul>
+  </div>
+
+  <div class="card p-4 rounded-lg space-y-3">
+    <ul class="text-sm space-y-2">
+      <li>🎭 <strong>Adventure Theme</strong> — pick a preset (Dungeon Crawl, Rescue Mission, etc.) or write your own</li>
+      <li>⚙️ <strong>Difficulty</strong> — Easy, Normal, Hard (affects how tough challenges are)</li>
+      <li>🏕️ <strong>Content Rating</strong>:
+        <ul class="ml-4 mt-1 space-y-1">
+          <li><strong>Campfire</strong> — cozy, no danger, silly fun</li>
+          <li><strong>Quest</strong> — danger exists, heroes get knocked out but not killed</li>
+          <li><strong>Dragon's Lair</strong> — high stakes, real consequences</li>
+        </ul>
+      </li>
+    </ul>
+  </div>
+
+  <div class="card p-4 rounded-lg space-y-3">
+    <h2 class="text-xl font-bold">Playing with Another Family</h2>
+    <p class="text-sm">You can share a campaign with another household and take turns!</p>
+    <ol class="text-sm space-y-1 list-decimal list-inside">
+      <li>The other family signs up at the app</li>
+      <li>Set your display name in Settings (so they recognize you)</li>
+      <li>Add them as a friend in Settings (enter their email)</li>
+      <li>On your campaign page, tap their name to share — one tap!</li>
+      <li>Both families add their characters to the party</li>
+      <li>Take turns — after you play, it's their turn next</li>
+    </ol>
+  </div>
+
+  <div class="card p-4 rounded-lg space-y-3">
+    <h2 class="text-xl font-bold">Tips for Bedtime</h2>
+    <ul class="text-sm space-y-1">
+      <li>⏱️ Sessions work best at 15-20 minutes</li>
+      <li>🌙 Use the bedtime button when it's time to stop</li>
+      <li>📱 Open the app a minute early so it's ready</li>
+      <li>🎭 Let the kids make choices — the DM adapts to anything</li>
+      <li>🎲 Young kids love rolling dice — let them tap the button even for small things</li>
+      <li>🔊 Pick a narrator voice in Settings — great for kids still learning to read</li>
+    </ul>
+  </div>
+</div>
+{% endblock %}

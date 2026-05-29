@@ -1,0 +1,10 @@
+#!/bin/sh
+# Pre-commit hook: run code quality checks before allowing commit
+
+echo "Running pre-commit checks..."
+
+uv run ruff check . || { echo "❌ Lint failed"; exit 1; }
+uv run ruff format --check . || { echo "❌ Format check failed (run: uv run ruff format .)"; exit 1; }
+uv run pytest -q || { echo "❌ Tests failed"; exit 1; }
+
+echo "✅ All checks passed"

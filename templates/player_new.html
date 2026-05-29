@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+{% set nav = "players" %}
+{% block title %}New Character - {{ app_name }}{% endblock %}
+{% block content %}
+<div class="space-y-6">
+  <a href="/players" class="text-sm text-gray-400 hover:text-white">← Back</a>
+  <h1 class="text-2xl font-bold">🧙 New Character</h1>
+
+  <form method="post" action="/players/new" enctype="multipart/form-data" class="card p-4 rounded-lg space-y-4">
+    <div>
+      <label class="block text-sm text-gray-400 mb-1">Photo <span class="text-gray-500">(used to generate avatar)</span></label>
+      <div class="space-y-2">
+        <div id="camera-container" class="hidden">
+          <video id="camera-preview" autoplay playsinline class="w-full rounded input"></video>
+          <canvas id="camera-canvas" class="hidden"></canvas>
+          <button type="button" id="snap-btn" class="w-full mt-2 bg-green-600 hover:bg-green-500 p-2 rounded text-sm font-bold">📸 Take Photo</button>
+        </div>
+        <img id="photo-preview" class="hidden w-32 h-32 rounded object-cover mx-auto">
+        <input name="photo" id="photo-input" type="file" accept="image/*" class="w-full p-2 rounded input text-sm file:mr-2 file:rounded file:border-0 file:bg-indigo-600 file:px-3 file:py-1 file:text-white file:text-sm">
+        <button type="button" id="camera-btn" class="w-full input hover:bg-gray-600 p-2 rounded text-sm">📷 Use Camera</button>
+      </div>
+    </div>
+    <div>
+      <label class="block text-sm text-gray-400 mb-1">Name</label>
+      <input name="name" required placeholder="Sir Fluffington" class="w-full p-3 rounded input">
+    </div>
+    <div>
+      <label class="block text-sm text-gray-400 mb-2">Class</label>
+      <div class="space-y-2">
+        <label class="block input p-3 rounded cursor-pointer has-[:checked]:ring-2 has-[:checked]:ring-indigo-500">
+          <input type="radio" name="class" value="Warrior" checked class="hidden">
+          <span class="font-bold">⚔️ Warrior</span>
+          <span class="block text-xs text-gray-400 mt-1">Strong and brave. Hits hard and takes hits harder.</span>
+        </label>
+        <label class="block input p-3 rounded cursor-pointer has-[:checked]:ring-2 has-[:checked]:ring-indigo-500">
+          <input type="radio" name="class" value="Wizard" class="hidden">
+          <span class="font-bold">🧙 Wizard</span>
+          <span class="block text-xs text-gray-400 mt-1">Casts powerful spells. Smart but squishy.</span>
+        </label>
+        <label class="block input p-3 rounded cursor-pointer has-[:checked]:ring-2 has-[:checked]:ring-indigo-500">
+          <input type="radio" name="class" value="Rogue" class="hidden">
+          <span class="font-bold">🗡️ Rogue</span>
+          <span class="block text-xs text-gray-400 mt-1">Sneaky and quick. Great at finding treasure and avoiding traps.</span>
+        </label>
+        <label class="block input p-3 rounded cursor-pointer has-[:checked]:ring-2 has-[:checked]:ring-indigo-500">
+          <input type="radio" name="class" value="Healer" class="hidden">
+          <span class="font-bold">💚 Healer</span>
+          <span class="block text-xs text-gray-400 mt-1">Keeps the team alive with magic. Kind and wise.</span>
+        </label>
+        <label class="block input p-3 rounded cursor-pointer has-[:checked]:ring-2 has-[:checked]:ring-indigo-500">
+          <input type="radio" name="class" value="Ranger" class="hidden">
+          <span class="font-bold">🏹 Ranger</span>
+          <span class="block text-xs text-gray-400 mt-1">Fights from far away. Talks to animals and knows the wild.</span>
+        </label>
+        <label class="block input p-3 rounded cursor-pointer has-[:checked]:ring-2 has-[:checked]:ring-indigo-500">
+          <input type="radio" name="class" value="Elf Knight" class="hidden">
+          <span class="font-bold">🧝 Elf Knight</span>
+          <span class="block text-xs text-gray-400 mt-1">Graceful and ancient. Fights with elegance and forest magic.</span>
+        </label>
+        <label class="block input p-3 rounded cursor-pointer has-[:checked]:ring-2 has-[:checked]:ring-indigo-500">
+          <input type="radio" name="class" value="Dwarf Smith" class="hidden">
+          <span class="font-bold">⛏️ Dwarf Smith</span>
+          <span class="block text-xs text-gray-400 mt-1">Tough as stone. Crafts weapons and armor from magical metals.</span>
+        </label>
+        <label class="block input p-3 rounded cursor-pointer has-[:checked]:ring-2 has-[:checked]:ring-indigo-500">
+          <input type="radio" name="class" value="Druid" class="hidden">
+          <span class="font-bold">🌿 Druid</span>
+          <span class="block text-xs text-gray-400 mt-1">Shapeshifts into animals. Commands the power of nature.</span>
+        </label>
+        <label class="block input p-3 rounded cursor-pointer has-[:checked]:ring-2 has-[:checked]:ring-indigo-500">
+          <input type="radio" name="class" value="Bard" class="hidden">
+          <span class="font-bold">🎵 Bard</span>
+          <span class="block text-xs text-gray-400 mt-1">Sings magical songs. Inspires friends and confuses enemies.</span>
+        </label>
+        <label class="block input p-3 rounded cursor-pointer has-[:checked]:ring-2 has-[:checked]:ring-indigo-500">
+          <input type="radio" name="class" value="Paladin" class="hidden">
+          <span class="font-bold">🛡️ Paladin</span>
+          <span class="block text-xs text-gray-400 mt-1">Holy knight. Protects the weak with sword and divine light.</span>
+        </label>
+        <label class="block input p-3 rounded cursor-pointer has-[:checked]:ring-2 has-[:checked]:ring-indigo-500">
+          <input type="radio" name="class" value="Dragon" class="hidden">
+          <span class="font-bold">🐉 Dragon</span>
+          <span class="block text-xs text-gray-400 mt-1">Can fly and breathe fire. Speaks in riddles and ancient wisdom.</span>
+        </label>
+        <label class="block input p-3 rounded cursor-pointer has-[:checked]:ring-2 has-[:checked]:ring-indigo-500">
+          <input type="radio" name="class" value="Dragonborn" class="hidden">
+          <span class="font-bold">⚔️🐉 Dragonborn</span>
+          <span class="block text-xs text-gray-400 mt-1">Half dragon, half warrior. Scales, a sword, and dragon breath.</span>
+        </label>
+        <label class="block input p-3 rounded cursor-pointer has-[:checked]:ring-2 has-[:checked]:ring-indigo-500">
+          <input type="radio" name="class" value="Fairy" class="hidden">
+          <span class="font-bold">🧚 Fairy</span>
+          <span class="block text-xs text-gray-400 mt-1">Tiny and magical. Flies on sparkle wings and casts glitter spells.</span>
+        </label>
+        <label class="block input p-3 rounded cursor-pointer has-[:checked]:ring-2 has-[:checked]:ring-indigo-500">
+          <input type="radio" name="class" value="Beastmaster" class="hidden">
+          <span class="font-bold">🐺 Beastmaster</span>
+          <span class="block text-xs text-gray-400 mt-1">Fights alongside an animal companion. Speaks to creatures.</span>
+        </label>
+        <label class="block input p-3 rounded cursor-pointer has-[:checked]:ring-2 has-[:checked]:ring-indigo-500">
+          <input type="radio" name="class" value="Pirate" class="hidden">
+          <span class="font-bold">🏴‍☠️ Pirate</span>
+          <span class="block text-xs text-gray-400 mt-1">Swashbuckler with a parrot. Quick with a cutlass and quicker with a joke.</span>
+        </label>
+        <label class="block input p-3 rounded cursor-pointer has-[:checked]:ring-2 has-[:checked]:ring-indigo-500">
+          <input type="radio" name="class" value="Clockwork Knight" class="hidden">
+          <span class="font-bold">🤖 Clockwork Knight</span>
+          <span class="block text-xs text-gray-400 mt-1">A magical robot from an ancient civilization. Tough and loyal.</span>
+        </label>
+        <label class="block input p-3 rounded cursor-pointer has-[:checked]:ring-2 has-[:checked]:ring-indigo-500">
+          <input type="radio" name="class" value="custom" class="hidden" id="custom-radio">
+          <span class="font-bold">✨ Custom</span>
+          <span class="block text-xs text-gray-400 mt-1">Make up your own!</span>
+        </label>
+        <input type="text" id="custom-class" placeholder="e.g. Half-Elf Pirate, Dragon Tamer..." class="hidden w-full p-3 rounded bg-gray-600 text-sm mt-1">
+      </div>
+      <script>
+        const customRadio = document.getElementById('custom-radio');
+        const customInput = document.getElementById('custom-class');
+        document.querySelectorAll('input[name="class"]').forEach(r => {
+          r.addEventListener('change', () => {
+            customInput.classList.toggle('hidden', r.value !== 'custom');
+          });
+        });
+        customInput.addEventListener('input', () => { customRadio.value = customInput.value; });
+      </script>
+    </div>
+    <div>
+      <label class="block text-sm text-gray-400 mb-1">Description <span class="text-gray-500">(backstory, looks, personality)</span></label>
+      <textarea name="description" rows="3" placeholder="A brave little knight with curly red hair who loves dragons and always shares their snacks..." class="w-full p-3 rounded input text-sm"></textarea>
+    </div>
+    <div>
+      <label class="block text-sm text-gray-400 mb-1">Stats <span class="text-gray-500">(total must equal 9)</span></label>
+      <div class="text-center text-sm mb-2">Points remaining: <span id="points" class="font-bold text-indigo-400">0</span></div>
+      <div class="grid grid-cols-3 gap-2">
+        <div>
+          <label class="block text-xs text-gray-500 text-center">Might</label>
+          <input name="might" type="number" min="1" max="5" value="3" class="stat-input w-full p-3 rounded input text-center">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 text-center">Agility</label>
+          <input name="agility" type="number" min="1" max="5" value="3" class="stat-input w-full p-3 rounded input text-center">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 text-center">Wits</label>
+          <input name="wits" type="number" min="1" max="5" value="3" class="stat-input w-full p-3 rounded input text-center">
+        </div>
+      </div>
+    </div>
+    <button type="submit" id="createBtn" class="w-full btn-primary p-3 rounded font-bold">Create Character</button>
+  </form>
+  <script>
+    const inputs = document.querySelectorAll('.stat-input');
+    const points = document.getElementById('points');
+    const btn = document.getElementById('createBtn');
+    const form = document.getElementById('authForm') || btn.closest('form');
+    function update() {
+      const total = [...inputs].reduce((s, i) => s + Number(i.value), 0);
+      const remaining = 9 - total;
+      points.textContent = remaining;
+      points.className = remaining === 0 ? 'font-bold text-green-400' : 'font-bold text-red-400';
+      btn.disabled = remaining !== 0;
+      btn.className = remaining === 0
+        ? 'w-full btn-primary p-3 rounded font-bold'
+        : 'w-full bg-gray-600 p-3 rounded font-bold text-gray-400 cursor-not-allowed';
+    }
+    inputs.forEach(i => i.addEventListener('input', update));
+    update();
+
+    btn.closest('form').addEventListener('submit', function() {
+      btn.disabled = true;
+      btn.textContent = 'Creating...';
+      btn.className = 'w-full bg-gray-600 p-3 rounded font-bold text-gray-400 cursor-not-allowed';
+    });
+  </script>
+  <script>
+    const cameraBtn = document.getElementById('camera-btn');
+    const cameraContainer = document.getElementById('camera-container');
+    const video = document.getElementById('camera-preview');
+    const canvas = document.getElementById('camera-canvas');
+    const snapBtn = document.getElementById('snap-btn');
+    const photoInput = document.getElementById('photo-input');
+    const photoPreview = document.getElementById('photo-preview');
+    let stream = null;
+
+    cameraBtn.addEventListener('click', async () => {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+        video.srcObject = stream;
+        cameraContainer.classList.remove('hidden');
+        cameraBtn.classList.add('hidden');
+        photoInput.classList.add('hidden');
+      } catch (e) {
+        alert('Camera access denied');
+      }
+    });
+
+    snapBtn.addEventListener('click', () => {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0);
+      canvas.toBlob(blob => {
+        const file = new File([blob], 'camera-photo.jpg', { type: 'image/jpeg' });
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        photoInput.files = dt.files;
+        // Show preview
+        photoPreview.src = URL.createObjectURL(blob);
+        photoPreview.classList.remove('hidden');
+        // Stop camera
+        stream.getTracks().forEach(t => t.stop());
+        cameraContainer.classList.add('hidden');
+        cameraBtn.textContent = '📷 Retake';
+        cameraBtn.classList.remove('hidden');
+      }, 'image/jpeg', 0.85);
+    });
+  </script>
+</div>
+{% endblock %}

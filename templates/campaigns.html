@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% set nav = "campaigns" %}
+{% block title %}Campaigns - {{ app_name }}{% endblock %}
+{% block content %}
+<div class="space-y-6">
+  <h1 class="text-2xl font-bold">🏰 Your Campaigns</h1>
+  <ul class="space-y-2">
+    {% for c in campaigns %}
+    <li>
+      <a href="/campaigns/{{ c.id }}" class="block card p-4 rounded-lg">
+        <div class="font-bold">{{ c.name }}</div>
+        {% if c.summary %}
+        <div class="muted text-sm mt-1">🐉 {{ c.summary }}</div>
+        {% endif %}
+        <div class="muted text-xs mt-1">{% if c.last_played_at %}Last played {{ c.last_played_at|relative_time }} · {% endif %}Started {{ c.created_at[:10] }}{% if member_counts.get(c.id) %} · 🧙 {{ member_counts[c.id] }}{% endif %}</div>
+      </a>
+    </li>
+    {% else %}
+    <li class="text-gray-500">No campaigns yet. Create one below!</li>
+    {% endfor %}
+  </ul>
+  <form method="post" action="/campaigns" class="flex gap-2">
+    <input name="name" placeholder="New campaign name" required class="flex-1 p-3 rounded input">
+    <button type="submit" class="btn-primary px-4 rounded font-bold">+</button>
+  </form>
+
+  {% if shared_campaigns %}
+  <h2 class="text-xl font-bold mt-6">🤝 Shared With You</h2>
+  <ul class="space-y-2">
+    {% for c in shared_campaigns %}
+    <li>
+      <a href="/campaigns/{{ c.id }}" class="block card p-4 rounded-lg">
+        <div class="font-bold">{{ c.name }} <span class="new-badge text-xs px-2 py-0.5 rounded-full bg-amber-600 text-white hidden" data-shared-at="{{ c.shared_at }}">New!</span></div>
+        {% if c.summary %}
+        <div class="muted text-sm mt-1">🐉 {{ c.summary }}</div>
+        {% endif %}
+        <div class="muted text-xs mt-1">{% if c.last_played_at %}Last played {{ c.last_played_at|relative_time }}{% endif %}{% if member_counts.get(c.id) %} · 🧙 {{ member_counts[c.id] }}{% endif %}</div>
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</div>
+<script>
+  (function() {
+    const key = 'kq-last-campaigns-visit';
+    const lastVisit = localStorage.getItem(key);
+    document.querySelectorAll('.new-badge').forEach(badge => {
+      const sharedAt = badge.dataset.sharedAt;
+      if (sharedAt && (!lastVisit || sharedAt > lastVisit)) badge.classList.remove('hidden');
+    });
+    localStorage.setItem(key, new Date().toISOString());
+  })();
+</script>
+{% endblock %}

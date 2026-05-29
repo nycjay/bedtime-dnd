@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% set nav = "settings" %}
+{% block title %}Friends - {{ app_name }}{% endblock %}
+{% block content %}
+<div class="space-y-6">
+  <a href="/settings" class="text-sm muted">← Back to Settings</a>
+  <h1 class="text-2xl font-bold">🤝 Friends</h1>
+
+  {% if request.query_params.get('saved') %}
+  <div data-flash class="bg-green-900 text-green-300 p-3 rounded text-sm">✓ Friend added!</div>
+  {% endif %}
+  {% if request.query_params.get('error') == 'user_not_found' %}
+  <div data-flash class="bg-red-900 text-red-300 p-3 rounded text-sm">User not found. They need to sign up first.</div>
+  {% endif %}
+
+  <!-- Add friend -->
+  <form method="post" action="/friends/add" class="card p-4 rounded-lg space-y-3">
+    <label class="block text-sm muted font-bold">Add a Friend</label>
+    <div class="flex gap-2">
+      <input name="email" type="email" placeholder="Their email address" required class="flex-1 p-3 rounded input text-sm">
+      <button type="submit" class="btn-primary px-4 rounded text-sm">Add</button>
+    </div>
+  </form>
+
+  <!-- Friends list -->
+  {% if friends %}
+  {% for f in friends %}
+  <div class="card p-4 rounded-lg space-y-3">
+    <div class="flex items-center justify-between">
+      <div class="font-bold">{{ f.display_name }}</div>
+      <form method="post" action="/friends/remove" class="inline"
+            onsubmit="return confirm('Remove {{ f.display_name }} from your friends?')">
+        <input type="hidden" name="friend_id" value="{{ f.id }}">
+        <button type="submit" class="text-xs muted hover:text-red-400">Remove</button>
+      </form>
+    </div>
+    {% if f.characters %}
+    <div>
+      <p class="text-xs muted mb-1">Characters:</p>
+      <div class="flex gap-2 flex-wrap">
+        {% for c in f.characters %}
+        <span class="text-xs px-2 py-1 rounded input">{{ c.name }} ({{ c.class }})</span>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+    {% if f.shared_campaigns %}
+    <div>
+      <p class="text-xs muted mb-1">Shared campaigns:</p>
+      <div class="flex gap-2 flex-wrap">
+        {% for camp in f.shared_campaigns %}
+        <a href="/campaigns/{{ camp.id }}" class="text-xs px-2 py-1 rounded input" style="color: var(--accent)">🏰 {{ camp.name }}</a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+  {% else %}
+  <p class="muted text-sm">No friends yet. Add someone by email to start sharing campaigns!</p>
+  {% endif %}
+</div>
+{% endblock %}
