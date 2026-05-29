@@ -1,5 +1,9 @@
 # Bedtime D&D
 
+<p align="center">
+  <img src="static/splash.png" alt="Bedtime D&D" width="600">
+</p>
+
 A mobile-optimized D&D Dungeon Master web app for running quick 20-minute bedtime RPG sessions with kids. AI-powered storytelling with streaming narrative, dice rolling, character avatars, and multi-household play.
 
 **Features:**
@@ -12,6 +16,12 @@ A mobile-optimized D&D Dungeon Master web app for running quick 20-minute bedtim
 - 🤝 Multi-household sharing with turn-based play
 - 🔊 Text-to-speech narration with voice selection
 - 📱 Mobile-first PWA (installable on home screen)
+
+<p align="center">
+  <img src="docs/images/game.png" alt="Game screen" width="300">
+  &nbsp;&nbsp;
+  <img src="docs/images/characters.png" alt="Characters" width="300">
+</p>
 
 ## Setup
 
