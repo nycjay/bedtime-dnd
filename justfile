@@ -99,3 +99,7 @@ check:
     uv run ruff check .
     uv run ruff format --check .
     uv run pytest -q
+
+# Cut a new release: bump version, tag, push, create GitHub release
+release:
+    ./scripts/release.sh

@@ -1,6 +1,6 @@
 [project]
 name = "dnd"
-version = "1.0.0"
+version = "1.0.1"
 description = "A mobile-optimized AI Dungeon Master for bedtime RPG sessions with kids"
 requires-python = ">=3.13"
 dependencies = [
