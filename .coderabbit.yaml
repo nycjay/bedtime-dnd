@@ -1,14 +1,11 @@
 language: en
 reviews:
-  profile: concise
+  profile: chill
   auto_review:
     enabled: true
     drafts: false
   path_filters:
     - "!uv.lock"
     - "!static/sprites/**"
-  tools:
-    ruff:
-      enabled: false  # Already enforced in CI
 chat:
   auto_reply: true
