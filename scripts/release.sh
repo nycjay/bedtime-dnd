@@ -65,7 +65,8 @@ p = pathlib.Path('pyproject.toml')
 p.write_text(re.sub(r'^version = \".*\"', 'version = \"$version\"', p.read_text(), count=1, flags=re.MULTILINE))
 "
 
-git add pyproject.toml
+uv lock
+git add pyproject.toml uv.lock
 git commit -m "Bump version to $version"
 git push origin main
 
