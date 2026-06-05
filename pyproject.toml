@@ -18,7 +18,7 @@ dependencies = [
 dev = [
     "httpx>=0.28.1",
     "pytest>=9.0.3",
-    "rembg[cpu]>=2.0.75",
+    "rembg[cpu]>=2.0.76",
     "ruff>=0.15.15",
     "ty>=0.0.40",
 ]
