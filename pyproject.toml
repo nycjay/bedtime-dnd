@@ -5,7 +5,7 @@ description = "A mobile-optimized AI Dungeon Master for bedtime RPG sessions wit
 requires-python = ">=3.13"
 dependencies = [
     "fastapi>=0.136.3",
-    "google-genai>=2.7.0",
+    "google-genai>=2.8.0",
     "httpx>=0.28.1",
     "jinja2>=3.1.6",
     "python-multipart>=0.0.29",
