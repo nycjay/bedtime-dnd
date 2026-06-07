@@ -198,8 +198,10 @@ async def reorder_members(request: Request, campaign_id: str, auth=Depends(requi
     form = await request.form()
     order = form.getlist("order")
     if order:
-        rows = [{"campaign_id": campaign_id, "player_id": pid, "sort_order": i} for i, pid in enumerate(order)]
-        supabase_admin.table("campaign_members").upsert(rows, on_conflict="campaign_id,player_id").execute()
+        for i, pid in enumerate(order):
+            supabase_admin.table("campaign_members").update({"sort_order": i}).eq(
+                "campaign_id", campaign_id
+            ).eq("player_id", pid).execute()
     return RedirectResponse(url=f"/campaigns/{campaign_id}?saved=1", status_code=303)
 
 
